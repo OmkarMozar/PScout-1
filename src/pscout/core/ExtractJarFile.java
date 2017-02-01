@@ -1,36 +1,52 @@
 package pscout.core;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import com.google.inject.Inject;
-
 import pscout.models.Config;
-import pscout.util.BashRunner;
+
+import java.io.*;
+import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class ExtractJarFile {
-	private final Logger LOGGER = Logger.getLogger(ExtractJarFile.class.getName());
-	
-	private final Config config;
+    private final Logger LOGGER = Logger.getLogger(ExtractJarFile.class.getName());
 
-	@Inject
-	public ExtractJarFile(Config config){
-		this.config = config;
-	}
-	
-	public void execute(){
-		try{
-			// Execute bash file with format: ./bash jars output
-			List<String> commands = new ArrayList<String>();
-			commands.addAll(Arrays.asList(config.extractJarCommands));
-			commands.add(String.format("%s %s %s", config.extractJarBash, config.jarFilePath, config.classDumpPath));
-			BashRunner  bash = new BashRunner(commands, false);
-			bash.run();
-		}catch(Exception e){
-			LOGGER.log(Level.SEVERE, e.getMessage(), e);
-		}
-	}
+    private final Config config;
+
+    @Inject
+    public ExtractJarFile(Config config) {
+        this.config = config;
+    }
+
+    public void execute() {
+        try {
+            ZipInputStream zis = new ZipInputStream(
+                    new BufferedInputStream(new FileInputStream(new File(config.jarFilePath))));
+            try {
+                ZipEntry ze;
+                int count;
+                byte[] buffer = new byte[8192];
+                while ((ze = zis.getNextEntry()) != null) {
+                    File file = new File(config.classDumpPath, ze.getName());
+                    File dir = ze.isDirectory() ? file : file.getParentFile();
+                    if (!dir.isDirectory() && !dir.mkdirs())
+                        throw new FileNotFoundException("Failed to ensure directory: " +
+                                dir.getAbsolutePath());
+                    if (ze.isDirectory())
+                        continue;
+                    FileOutputStream fout = new FileOutputStream(file);
+                    try {
+                        while ((count = zis.read(buffer)) != -1)
+                            fout.write(buffer, 0, count);
+                    } finally {
+                        fout.close();
+                    }
+                }
+            } finally {
+                zis.close();
+            }
+        } catch (IOException e) {
+
+        }
+    }
 }
