@@ -24,6 +24,6 @@ public class Config {
 	public String extractJarBash;
 	
 	public String getClassDumpPath(){
-		return this.classDumpPath + (this.classDumpPath.endsWith("\\") ? "": "\\");
+		return this.classDumpPath + (this.classDumpPath.endsWith("/") ? "": "/");
 	}
 }
