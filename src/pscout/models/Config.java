@@ -10,7 +10,9 @@ public class Config {
 	/* Database */
 	public String driverClass;
 	public String connectionString;
-	
+	public String user;
+	public String password;
+
 	/* Android */
 	public String androidVersion;
 	public String androidSourcePath;
